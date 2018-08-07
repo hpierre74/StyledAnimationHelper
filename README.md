@@ -1,2 +1,0 @@
-# StyledAnimationHelper
-Created with CodeSandbox
