@@ -1,34 +1,56 @@
-import React from "react";
+import React, { Component } from "react";
 import PropTypes from "prop-types";
 import styled, { keyframes } from "styled-components";
-
-const requireAnimation = animation =>
-  require(`react-animations/lib/${animation}`).default;
 
 const AnimationWrapper = styled.div`
   animation: ${({ duration }) => duration}s ${({ animation }) => animation};
 `;
 
-const withAnim = Component => {
-  const withAnimHOC = props => (
-    <AnimationWrapper
-      duration={props.duration}
-      animation={keyframes`${requireAnimation(props.animation)}`}
-    >
-      <Component {...props} />
-    </AnimationWrapper>
-  );
+const withAnim = AnimComponent => {
+  class WithAnimHoc extends Component {
+    constructor(props) {
+      super(props);
+      this.state = {
+        AsyncComponent: () => null,
+        animation: this.props.animation,
+        duration: this.props.duration
+      };
+    }
 
-  withAnimHOC.defaultProps = {
+    async componentDidMount() {
+      const module = await import(`react-animations/lib/${
+        this.state.animation
+      }`);
+
+      const AsyncComponent = () => (
+        <AnimationWrapper
+          duration={this.state.duration}
+          animation={keyframes`${module.default}`}
+        >
+          <AnimComponent {...this.props} />
+        </AnimationWrapper>
+      );
+
+      this.setState({ AsyncComponent });
+    }
+
+    render() {
+      const { AsyncComponent } = this.state;
+
+      return <AsyncComponent />;
+    }
+  }
+
+  WithAnimHoc.defaultProps = {
     duration: "1.5"
   };
 
-  withAnimHOC.propTypes = {
+  WithAnimHoc.propTypes = {
     animation: PropTypes.string.isRequired,
     duration: PropTypes.string
   };
 
-  return withAnimHOC;
+  return WithAnimHoc;
 };
 
 export default withAnim;
